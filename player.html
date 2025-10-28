@@ -1,29 +1,20 @@
 <!DOCTYPE html>
 <html lang="cs">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Rokový kvíz – Hráč</title>
-  <link rel="stylesheet" href="style.css" />
-  <script src="https://www.gstatic.com/firebasejs/10.13.2/firebase-app-compat.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/10.13.2/firebase-firestore-compat.js"></script>
+  <meta charset="UTF-8">
+  <title>Rokový kvíz</title>
+  <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-firestore.js"></script>
+  <link rel="stylesheet" href="style.css">
 </head>
-<body>
-  <div class="container">
-    <h1>📱 Rokový kvíz</h1>
-    <div id="login">
-      <input type="text" id="playerName" placeholder="Zadej své jméno" />
-      <button id="joinBtn">Připojit se</button>
-    </div>
+<body data-page="player">
+  <h1>🎸 Rokový kvíz</h1>
+  
+  <h2>Otázka <span id="questionNumber">1</span></h2>
+  <input type="number" id="answerInput" placeholder="Zadej rok (1990–2025)">
+  <button id="submitBtn">Odeslat odpověď</button>
+  <p id="status"></p>
 
-    <div id="quiz" style="display:none;">
-      <h2 id="questionLabel">Otázka 1</h2>
-      <p>Zadej rok (1990–2025):</p>
-      <input type="number" id="answerInput" min="1990" max="2025" />
-      <button id="submitAnswer">Odeslat odpověď</button>
-      <p id="feedback"></p>
-    </div>
-  </div>
   <script src="script.js"></script>
 </body>
 </html>

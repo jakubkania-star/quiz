@@ -1,11 +1,11 @@
-// === VLOŽ SEM SVŮJ FIREBASE CONFIG ===
+// Your web app's Firebase configuration
 const firebaseConfig = {
-  apiKey: "AIzaSyDdNND7UI58ydXX54t9VphiKSvh4BlFjUA",
-  authDomain: "realtime-quiz-9a662.firebaseapp.com",
-  projectId: "realtime-quiz-9a662",
-  storageBucket: "realtime-quiz-9a662.firebasestorage.app",
-  messagingSenderId: "1083388784503",
-  appId: "1:1083388784503:web:b7d31f07741bcda1b73b72"
+  apiKey: "AIzaSyDdNND7UI58ydXX54t9VphiKSvh4BlFjUA",
+  authDomain: "realtime-quiz-9a662.firebaseapp.com",
+  projectId: "realtime-quiz-9a662",
+  storageBucket: "realtime-quiz-9a662.firebasestorage.app",
+  messagingSenderId: "1083388784503",
+  appId: "1:1083388784503:web:b7d31f07741bcda1b73b72"
 };
 
 // === Inicializace Firebase ===

@@ -1,19 +1,33 @@
 <!DOCTYPE html>
 <html lang="cs">
 <head>
-  <meta charset="UTF-8">
-  <title>Rokový kvíz</title>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Rokový kvíz — Hráč</title>
+  <link rel="stylesheet" href="style.css">
   <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
   <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-firestore.js"></script>
-  <link rel="stylesheet" href="style.css">
 </head>
 <body data-page="player">
-  <h1>🎸 Rokový kvíz</h1>
-  
-  <h2>Otázka <span id="questionNumber">1</span></h2>
-  <input type="number" id="answerInput" placeholder="Zadej rok (1990–2025)">
-  <button id="submitBtn">Odeslat odpověď</button>
-  <p id="status"></p>
+  <div class="container">
+    <h1>📱 Rokový kvíz</h1>
+
+    <div id="loginBox">
+      <input id="playerNameInput" placeholder="Zadej své jméno" />
+      <button id="joinBtn" class="btn">Připojit se</button>
+    </div>
+
+    <div id="quizBox" style="display:none;">
+      <h2>Otázka <span id="questionNumber">1</span></h2>
+      <p id="questionText">Zadej rok (1990–2025)</p>
+      <input id="answerInput" type="number" min="1990" max="2025" placeholder="Rok (1990–2025)" />
+      <div>
+        <button id="submitBtn" class="btn">Odeslat odpověď</button>
+      </div>
+      <p id="status" class="muted"></p>
+      <p id="info" class="muted">Čekej na otevření hlasování, pokud je zavřené.</p>
+    </div>
+  </div>
 
   <script src="script.js"></script>
 </body>

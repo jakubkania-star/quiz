@@ -12,7 +12,7 @@ const TOTAL_QUESTIONS = 5;
 const MIN_YEAR = 1990;
 const MAX_YEAR = 2025;
 
-// správné odpovědi (můžeš měnit)
+// správné odpovědi
 const CORRECT = [2013, 2007, 2004, 2021, 2005];
 
 // scoring function
@@ -30,7 +30,6 @@ function scoreForDiff(diff) {
 firebase.initializeApp(firebaseConfig);
 const db = firebase.firestore();
 
-// utility
 function idFromName(name) {
   return name.trim().replace(/\s+/g, '_').replace(/[^\w\-]/g, '').toLowerCase();
 }
@@ -80,7 +79,7 @@ async function playerJoin(name) {
   if (!name) return;
   const cleanName = name.trim();
 
-  // zkontroluj jestli jméno už existuje
+  // kontrola duplicit
   const existing = await db.collection('players').where('name', '==', cleanName).get();
   if (!existing.empty) {
     alert('Toto jméno už někdo používá. Zadej jiné.');
@@ -102,7 +101,6 @@ async function restorePlayerSession() {
   const snap = await ref.get();
 
   if (!snap.exists) {
-    // pokud hráč s tímto jménem v databázi už není (reset kvízu)
     localStorage.removeItem('playerName');
     localPlayerName = null;
     localPlayerId = null;
@@ -143,7 +141,13 @@ async function submitPlayerAnswer(year) {
     }, { merge: true });
   });
 
-  document.getElementById('status').textContent = '✅ Odpověď odeslána!';
+  const status = document.getElementById('status');
+  status.textContent = '✅ Odpověď odeslána!';
+  status.className = "sent";
+
+  setTimeout(() => {
+    if (status.className === "sent") status.textContent = '';
+  }, 10000); // po 10s smaže nápis
 }
 
 // ========== UI ==========
@@ -162,10 +166,7 @@ function attachAdminListeners() {
     localCurrentQuestion = data.currentQuestion || 1;
     quizOpen = !!data.open;
 
-    label.textContent = `Otázka: ${localCurrentQuestion}`;
-    label.style.color = quizOpen ? 'green' : 'red';
-    label.style.fontWeight = 'bold';
-    label.insertAdjacentText('beforeend', quizOpen ? ' — otevřeno' : ' — uzavřeno');
+    label.textContent = `Otázka: ${localCurrentQuestion} ${quizOpen ? '🟢 otevřeno' : '🔴 zavřeno'}`;
   });
 
   db.collection('players').onSnapshot(async (snap) => {
@@ -228,6 +229,8 @@ function attachPlayerListeners() {
     quizOpen = !!data.open;
 
     document.getElementById('questionNumber').textContent = localCurrentQuestion;
+    document.getElementById('status').textContent = ''; // smaže nápis po změně otázky
+
     const info = document.getElementById('info');
     if (quizOpen) info.textContent = '🟢 Hlasování otevřeno!';
     else info.textContent = '🔴 Hlasování zavřeno.';
@@ -235,21 +238,26 @@ function attachPlayerListeners() {
 }
 
 function attachLeaderboardPage() {
-  const leaderDiv = document.getElementById('leaderboardView');
-  const qDisp = document.getElementById('questionDisplay');
+  const tbody = document.querySelector('#leaderboardTable tbody');
+  const label = document.getElementById('currentQuestionLabel');
 
   db.collection('quiz').doc('state').onSnapshot((snap) => {
     const data = snap.exists ? snap.data() : { currentQuestion: 1 };
     const cur = data.currentQuestion || 1;
-    qDisp.textContent = cur;
+    label.textContent = `Otázka: ${cur}`;
 
     db.collection('players').onSnapshot((snap2) => {
       const players = [];
       snap2.forEach(d => players.push(d.data()));
       players.sort((a,b) => (b.score || 0) - (a.score || 0));
-      leaderDiv.innerHTML = players.map((p, idx) => {
+      tbody.innerHTML = players.map((p, idx) => {
         const answered = p[`answered_q${cur}`] ? '✅' : '❌';
-        return `<div>${idx+1}. ${p.name || '-'} — ${p.score || 0} bodů ${answered}</div>`;
+        return `<tr>
+          <td>${idx+1}</td>
+          <td>${p.name || '-'}</td>
+          <td>${p.score || 0}</td>
+          <td>${answered}</td>
+        </tr>`;
       }).join('');
     });
   });

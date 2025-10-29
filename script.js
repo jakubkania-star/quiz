@@ -250,15 +250,20 @@ function attachLeaderboardPage() {
       const players = [];
       snap2.forEach(d => players.push(d.data()));
       players.sort((a,b) => (b.score || 0) - (a.score || 0));
-      tbody.innerHTML = players.map((p, idx) => {
-        const answered = p[`answered_q${cur}`] ? '✅' : '❌';
-        return `<tr>
-          <td>${idx+1}</td>
-          <td>${p.name || '-'}</td>
-          <td>${p.score || 0}</td>
-          <td>${answered}</td>
-        </tr>`;
-      }).join('');
+      
+   tbody.innerHTML = players.map((p, idx) => {
+  const answered = p[`answered_q${cur}`] ? '✅' : '❌';
+  const rowClass = idx === 0 ? 'first-place' : '';
+  return `<tr class="${rowClass}">
+    <td>${idx+1}</td>
+    <td>${p.name || '-'}</td>
+    <td>${p.score || 0}</td>
+    <td class="${p[`answered_q${cur}`] ? 'answered' : 'not-answered'}">${answered}</td>
+  </tr>`;
+}).join('');
+
+
+      
     });
   });
 }

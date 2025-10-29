@@ -12,7 +12,7 @@ const TOTAL_QUESTIONS = 5;
 const MIN_YEAR = 1990;
 const MAX_YEAR = 2025;
 
-// správné odpovědi (zde můžeš upravit)
+// správné odpovědi (můžeš měnit)
 const CORRECT = [2013, 2007, 2004, 2021, 2005];
 
 // scoring function
@@ -30,10 +30,16 @@ function scoreForDiff(diff) {
 firebase.initializeApp(firebaseConfig);
 const db = firebase.firestore();
 
-// utility: sanitize name for doc id
+// utility
 function idFromName(name) {
   return name.trim().replace(/\s+/g, '_').replace(/[^\w\-]/g, '').toLowerCase();
 }
+
+// ========== GLOBAL STATE ==========
+let localPlayerName = localStorage.getItem('playerName') || null;
+let localPlayerId = localPlayerName ? idFromName(localPlayerName) : null;
+let localCurrentQuestion = 1;
+let quizOpen = false;
 
 // ========== ADMIN ==========
 async function setQuizState(newState) {
@@ -61,7 +67,6 @@ async function prevQuestion() {
   await setQuizState({ currentQuestion: prev, open: false });
 }
 
-// reset (used by reset page)
 async function resetAll() {
   const players = await db.collection('players').get();
   const batch = db.batch();
@@ -71,23 +76,43 @@ async function resetAll() {
 }
 
 // ========== PLAYER ==========
-let localPlayerName = localStorage.getItem('playerName') || null;
-let localPlayerId = localPlayerName ? idFromName(localPlayerName) : null;
-let localCurrentQuestion = 1;
-let quizOpen = false;
-
 async function playerJoin(name) {
   if (!name) return;
-  localPlayerName = name.trim();
-  localPlayerId = idFromName(localPlayerName);
-  localStorage.setItem('playerName', localPlayerName);
+  const cleanName = name.trim();
+
+  // zkontroluj jestli jméno už existuje
+  const existing = await db.collection('players').where('name', '==', cleanName).get();
+  if (!existing.empty) {
+    alert('Toto jméno už někdo používá. Zadej jiné.');
+    throw new Error('duplicate_name');
+  }
+
+  localPlayerName = cleanName;
+  localPlayerId = idFromName(cleanName);
+  localStorage.setItem('playerName', cleanName);
+
+  const ref = db.collection('players').doc(localPlayerId);
+  await ref.set({ name: cleanName, score: 0 }, { merge: true });
+}
+
+async function restorePlayerSession() {
+  if (!localPlayerName || !localPlayerId) return false;
+
   const ref = db.collection('players').doc(localPlayerId);
   const snap = await ref.get();
+
   if (!snap.exists) {
-    await ref.set({ name: localPlayerName, score: 0 });
-  } else {
-    await ref.set({ name: localPlayerName }, { merge: true });
+    // pokud hráč s tímto jménem v databázi už není (reset kvízu)
+    localStorage.removeItem('playerName');
+    localPlayerName = null;
+    localPlayerId = null;
+    return false;
   }
+
+  document.getElementById('currentPlayerName').textContent = `Hraješ jako: ${localPlayerName}`;
+  document.getElementById('loginBox').style.display = 'none';
+  document.getElementById('quizBox').style.display = 'block';
+  return true;
 }
 
 async function submitPlayerAnswer(year) {
@@ -118,7 +143,7 @@ async function submitPlayerAnswer(year) {
     }, { merge: true });
   });
 
-  document.getElementById('status').textContent = 'Odpověď odeslána.';
+  document.getElementById('status').textContent = '✅ Odpověď odeslána!';
 }
 
 // ========== UI ==========
@@ -126,13 +151,11 @@ function attachAdminListeners() {
   const startBtn = document.getElementById('startQuestionBtn');
   const endBtn = document.getElementById('endAndNextBtn');
   const prevBtn = document.getElementById('prevQuestionBtn');
-  const gotoReset = document.getElementById('gotoReset');
   const label = document.getElementById('currentQuestionLabel');
 
   if (startBtn) startBtn.addEventListener('click', startQuestion);
   if (endBtn) endBtn.addEventListener('click', endAndNext);
   if (prevBtn) prevBtn.addEventListener('click', prevQuestion);
-  if (gotoReset) gotoReset.addEventListener('click', () => window.open('/reset.html', '_blank'));
 
   db.collection('quiz').doc('state').onSnapshot((snap) => {
     const data = snap.exists ? snap.data() : { currentQuestion: 1, open: false };
@@ -145,25 +168,25 @@ function attachAdminListeners() {
     label.insertAdjacentText('beforeend', quizOpen ? ' — otevřeno' : ' — uzavřeno');
   });
 
-  db.collection('players').onSnapshot((snap) => {
+  db.collection('players').onSnapshot(async (snap) => {
     const rows = [];
     snap.forEach(d => rows.push(d.data()));
     rows.sort((a,b) => (b.score || 0) - (a.score || 0));
     const tbody = document.querySelector('#leaderboardTable tbody');
-    db.collection('quiz').doc('state').get().then(s => {
-      const curQ = s.exists && s.data().currentQuestion ? s.data().currentQuestion : 1;
-      if (tbody) {
-        tbody.innerHTML = rows.map((p, idx) => {
-          const answered = p[`answered_q${curQ}`] ? '✅' : '❌';
-          return `<tr>
-            <td>${idx+1}</td>
-            <td>${p.name || '—'}</td>
-            <td>${p.score || 0}</td>
-            <td>${answered}</td>
-          </tr>`;
-        }).join('');
-      }
-    });
+    const s = await db.collection('quiz').doc('state').get();
+    const curQ = s.exists && s.data().currentQuestion ? s.data().currentQuestion : 1;
+
+    if (tbody) {
+      tbody.innerHTML = rows.map((p, idx) => {
+        const answered = p[`answered_q${curQ}`] ? '✅' : '❌';
+        return `<tr>
+          <td>${idx+1}</td>
+          <td>${p.name || '—'}</td>
+          <td>${p.score || 0}</td>
+          <td>${answered}</td>
+        </tr>`;
+      }).join('');
+    }
   });
 }
 
@@ -172,20 +195,26 @@ function attachPlayerListeners() {
   const nameInput = document.getElementById('playerNameInput');
   const quizBox = document.getElementById('quizBox');
   const loginBox = document.getElementById('loginBox');
-
-  // Zobrazíme login jako výchozí
-  if (loginBox) loginBox.style.display = 'block';
-  if (quizBox) quizBox.style.display = 'none';
+  const currentNameLabel = document.getElementById('currentPlayerName');
 
   if (joinBtn) {
     joinBtn.addEventListener('click', async () => {
       const name = nameInput.value.trim();
       if (!name) return alert('Zadej jméno.');
-      await playerJoin(name);
-      loginBox.style.display = 'none';
-      quizBox.style.display = 'block';
+      try {
+        await playerJoin(name);
+        currentNameLabel.textContent = `Hraješ jako: ${name}`;
+        loginBox.style.display = 'none';
+        quizBox.style.display = 'block';
+      } catch (e) {
+        if (e.message === 'duplicate_name') return;
+        console.error(e);
+      }
     });
   }
+
+  // obnova relace
+  restorePlayerSession();
 
   const submitBtn = document.getElementById('submitBtn');
   if (submitBtn) submitBtn.addEventListener('click', async () => {

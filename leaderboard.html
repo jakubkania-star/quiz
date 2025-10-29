@@ -6,14 +6,120 @@
   <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
   <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-firestore.js"></script>
   <link rel="stylesheet" href="style.css">
+  <style>
+    body {
+      font-family: 'Segoe UI', Roboto, sans-serif;
+      background: #f8fafc;
+      margin: 0;
+      padding: 0;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+    }
+
+    header {
+      display: flex;
+      align-items: center;
+      width: 100%;
+      justify-content: flex-start;
+      background: #004aad;
+      color: white;
+      padding: 10px 20px;
+      box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+    }
+
+    header img {
+      height: 40px;
+      margin-right: 15px;
+      border-radius: 5px;
+      background: white;
+      padding: 3px;
+    }
+
+    h1 {
+      margin: 0;
+      font-size: 1.4rem;
+    }
+
+    .leaderboard-container {
+      width: 90%;
+      max-width: 700px;
+      background: white;
+      margin-top: 30px;
+      border-radius: 12px;
+      box-shadow: 0 4px 10px rgba(0,0,0,0.1);
+      padding: 20px;
+      text-align: center;
+    }
+
+    h2 {
+      margin-top: 0;
+      color: #004aad;
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-top: 15px;
+      font-size: 1rem;
+    }
+
+    th, td {
+      padding: 10px;
+      text-align: center;
+      border-bottom: 1px solid #e5e7eb;
+    }
+
+    th {
+      background-color: #004aad;
+      color: white;
+    }
+
+    tr:nth-child(even) {
+      background-color: #f3f4f6;
+    }
+
+    .answered {
+      color: green;
+      font-weight: bold;
+    }
+
+    .not-answered {
+      color: red;
+      font-weight: bold;
+    }
+
+    #currentQuestionLabel {
+      font-size: 1.2rem;
+      margin-bottom: 10px;
+      color: #333;
+    }
+  </style>
 </head>
 <body data-page="leaderboard">
-  <h1>🏆 Leaderboard</h1>
-  <h3 id="currentQuestionLabel">Otázka: 1</h3>
-  <table id="leaderboardTable" border="1">
-    <thead><tr><th>#</th><th>Jméno</th><th>Body</th><th>Odpověděl</th></tr></thead>
-    <tbody></tbody>
-  </table>
+
+  <header>
+    <img src="https://1smiseny.skauting.cz/wp-content/uploads/2021/01/cropped-logo.png" alt="Skaut Logo">
+    <h1>Skautský kvíz – Leaderboard</h1>
+  </header>
+
+  <div class="leaderboard-container">
+    <h2>🏆 Leaderboard</h2>
+    <div id="currentQuestionLabel">Otázka: 1</div>
+
+    <table id="leaderboardTable">
+      <thead>
+        <tr>
+          <th>#</th>
+          <th>Jméno</th>
+          <th>Body</th>
+          <th>Odpověděl</th>
+        </tr>
+      </thead>
+      <tbody></tbody>
+    </table>
+  </div>
+
   <script src="script.js"></script>
 </body>
 </html>

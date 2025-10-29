@@ -1,44 +1,52 @@
 <!DOCTYPE html>
 <html lang="cs">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Rokový kvíz – Admin</title>
-  <link rel="stylesheet" href="style.css" />
-  <script src="https://www.gstatic.com/firebasejs/10.13.2/firebase-app-compat.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/10.13.2/firebase-firestore-compat.js"></script>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Rokový kvíz — Admin</title>
+  <link rel="stylesheet" href="style.css">
+  <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-firestore.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/qrcodejs@1.0.0/qrcode.min.js"></script>
 </head>
-<body>
+<body data-page="admin">
   <div class="container">
-    <h1>🎯 Rokový kvíz – Admin panel</h1>
+    <h1>🎯 Rokový kvíz — Admin</h1>
 
     <div class="controls">
-      <button id="prevQuestion">⏮️ Předchozí otázka</button>
-      <span id="questionNumber">Otázka: 1</span>
-      <button id="nextQuestion">⏭️ Další otázka</button>
+      <button id="startQuestionBtn" class="btn">▶️ Start question (open voting)</button>
+      <button id="endAndNextBtn" class="btn">⏭️ End & Next</button>
+      <button id="prevQuestionBtn" class="btn">⏮️ Previous</button>
+      <span id="currentQuestionLabel" class="big">Otázka: 1 / <span id="totalQuestionsLabel"></span></span>
     </div>
 
-    <div id="leaderboard" class="leaderboard">
-      <h2>🏆 Průběžné pořadí</h2>
-      <table id="leaderboardTable">
-        <thead><tr><th>Jméno</th><th>Body</th></tr></thead>
-        <tbody></tbody>
-      </table>
-    </div>
+    <div class="admin-row">
+      <div class="leaderboard-box">
+        <h2>🏆 Leaderboard</h2>
+        <table id="leaderboardTable">
+          <thead>
+            <tr><th>#</th><th>Jméno</th><th>Body</th><th>Answered</th></tr>
+          </thead>
+          <tbody></tbody>
+        </table>
+      </div>
 
-    <div id="qrCodeContainer" class="qr">
-      <h3>📱 Připoj se ke kvízu</h3>
-      <div id="qrcode"></div>
-      <p id="joinLink"></p>
+      <div class="qr-box">
+        <h3>📱 QR / join link</h3>
+        <div id="qrcode"></div>
+        <p id="joinLink"></p>
+        <h3>🔧 Admin actions</h3>
+        <button id="gotoReset" class="btn warn">🧹 Open Reset page</button>
+      </div>
     </div>
   </div>
 
   <script src="script.js"></script>
   <script>
+    // generate QR to player page
     const playerUrl = window.location.origin + "/player.html";
     document.getElementById("joinLink").textContent = playerUrl;
-    new QRCode(document.getElementById("qrcode"), playerUrl);
+    new QRCode(document.getElementById("qrcode"), { text: playerUrl, width: 160, height: 160 });
   </script>
 </body>
 </html>

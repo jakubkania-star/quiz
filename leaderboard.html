@@ -1,20 +1,19 @@
 <!DOCTYPE html>
 <html lang="cs">
 <head>
-  <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width,initial-scale=1" />
-  <title>Leaderboard — Rokový kvíz</title>
-  <link rel="stylesheet" href="style.css">
+  <meta charset="UTF-8">
+  <title>Leaderboard</title>
   <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
   <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-firestore.js"></script>
+  <link rel="stylesheet" href="style.css">
 </head>
 <body data-page="leaderboard">
-  <div class="container">
-    <h1>🏆 Leaderboard</h1>
-    <h2>Otázka <span id="questionDisplay">1</span></h2>
-    <div id="leaderboardView"></div>
-  </div>
-
+  <h1>🏆 Leaderboard</h1>
+  <h3 id="currentQuestionLabel">Otázka: 1</h3>
+  <table id="leaderboardTable" border="1">
+    <thead><tr><th>#</th><th>Jméno</th><th>Body</th><th>Odpověděl</th></tr></thead>
+    <tbody></tbody>
+  </table>
   <script src="script.js"></script>
 </body>
 </html>

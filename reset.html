@@ -1,17 +1,21 @@
 <!DOCTYPE html>
 <html lang="cs">
 <head>
-  <meta charset="UTF-8">
-  <title>🧹 Reset kvízu</title>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Reset kvízu</title>
+  <link rel="stylesheet" href="style.css">
   <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
   <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-firestore.js"></script>
-  <link rel="stylesheet" href="style.css">
 </head>
 <body data-page="reset">
-  <h1>🧹 Reset kvízu</h1>
-  <p>Stisknutím tlačítka se vymažou všechny odpovědi a kvíz se nastaví na otázku 1.</p>
-  <button id="resetAllBtn">Resetuj vše</button>
-  <p id="resetStatus"></p>
+  <div class="container">
+    <h1>🧹 Reset kvízu (ADMIN)</h1>
+    <p>Reset smaže data všech hráčů a nastaví otázku na 1.</p>
+    <button id="confirmReset" class="btn warn">Smazat výsledky a nastavit otázku na 1</button>
+    <p id="resetResult"></p>
+  </div>
+
   <script src="script.js"></script>
 </body>
 </html>

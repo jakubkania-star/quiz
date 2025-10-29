@@ -35,20 +35,18 @@ function idFromName(name) {
   return name.trim().replace(/\s+/g, '_').replace(/[^\w\-]/g, '').toLowerCase();
 }
 
-// ========== ADMIN ACTIONS ==========
+// ========== ADMIN ==========
 async function setQuizState(newState) {
   await db.collection('quiz').doc('state').set(newState, { merge: true });
 }
 
 async function startQuestion() {
-  // open voting (keep currentQuestion)
   const snap = await db.collection('quiz').doc('state').get();
   let cur = snap.exists && snap.data().currentQuestion ? snap.data().currentQuestion : 1;
   await setQuizState({ currentQuestion: cur, open: true });
 }
 
 async function endAndNext() {
-  // close voting, then increment question (if not last)
   const snap = await db.collection('quiz').doc('state').get();
   let cur = snap.exists && snap.data().currentQuestion ? snap.data().currentQuestion : 1;
   await setQuizState({ open: false });
@@ -65,16 +63,14 @@ async function prevQuestion() {
 
 // reset (used by reset page)
 async function resetAll() {
-  // delete players
   const players = await db.collection('players').get();
   const batch = db.batch();
   players.forEach(d => batch.delete(d.ref));
   await batch.commit();
-  // reset state doc
   await setQuizState({ currentQuestion: 1, open: false });
 }
 
-// ========== PLAYER LOGIC ==========
+// ========== PLAYER ==========
 let localPlayerName = localStorage.getItem('playerName') || null;
 let localPlayerId = localPlayerName ? idFromName(localPlayerName) : null;
 let localCurrentQuestion = 1;
@@ -85,41 +81,32 @@ async function playerJoin(name) {
   localPlayerName = name.trim();
   localPlayerId = idFromName(localPlayerName);
   localStorage.setItem('playerName', localPlayerName);
-  // create player doc if not exist
   const ref = db.collection('players').doc(localPlayerId);
   const snap = await ref.get();
   if (!snap.exists) {
     await ref.set({ name: localPlayerName, score: 0 });
   } else {
-    // make sure name field is correct
     await ref.set({ name: localPlayerName }, { merge: true });
   }
 }
 
 async function submitPlayerAnswer(year) {
   if (!localPlayerName) return alert('Nejprve se přihlas.');
-  if (!quizOpen) return alert('Hlasování pro tuto otázku není otevřené.');
-  if (isNaN(year) || year < MIN_YEAR || year > MAX_YEAR) return alert(`Zadej platný rok mezi ${MIN_YEAR}–${MAX_YEAR}.`);
+  if (!quizOpen) return alert('Hlasování není otevřené.');
+  if (isNaN(year) || year < MIN_YEAR || year > MAX_YEAR)
+    return alert(`Zadej platný rok (${MIN_YEAR}–${MAX_YEAR}).`);
 
   const qKey = `q${localCurrentQuestion}`;
   const answeredKey = `answered_q${localCurrentQuestion}`;
-
   const playerRef = db.collection('players').doc(localPlayerId);
   const playerSnap = await playerRef.get();
   const data = playerSnap.exists ? playerSnap.data() : {};
 
-  if (data[answeredKey]) {
-    return alert('Na tuto otázku jsi již odpověděl.');
-  }
+  if (data[answeredKey]) return alert('Na tuto otázku jsi už odpověděl.');
 
-  // compute points
   const correct = CORRECT[localCurrentQuestion - 1] || null;
-  let points = 0;
-  if (correct !== null) {
-    points = scoreForDiff(year - correct);
-  }
+  let points = correct ? scoreForDiff(year - correct) : 0;
 
-  // update: set answer and increment score atomically via transaction
   await db.runTransaction(async (tx) => {
     const pSnap = await tx.get(playerRef);
     const prevScore = pSnap.exists && pSnap.data().score ? pSnap.data().score : 0;
@@ -131,56 +118,43 @@ async function submitPlayerAnswer(year) {
     }, { merge: true });
   });
 
-  // UI feedback
-  const status = document.getElementById('status');
-  if (status) status.textContent = 'Odpověď odeslána. Čekej na další otázku.';
+  document.getElementById('status').textContent = 'Odpověď odeslána.';
 }
 
-// ========== LISTENERS / UI SYNC ==========
+// ========== UI ==========
 function attachAdminListeners() {
-  // elements
   const startBtn = document.getElementById('startQuestionBtn');
   const endBtn = document.getElementById('endAndNextBtn');
   const prevBtn = document.getElementById('prevQuestionBtn');
   const gotoReset = document.getElementById('gotoReset');
+  const label = document.getElementById('currentQuestionLabel');
 
   if (startBtn) startBtn.addEventListener('click', startQuestion);
   if (endBtn) endBtn.addEventListener('click', endAndNext);
   if (prevBtn) prevBtn.addEventListener('click', prevQuestion);
-  if (gotoReset) gotoReset.addEventListener('click', () => {
-    window.open('/reset.html', '_blank');
-  });
+  if (gotoReset) gotoReset.addEventListener('click', () => window.open('/reset.html', '_blank'));
 
-  // realtime state listener
   db.collection('quiz').doc('state').onSnapshot((snap) => {
     const data = snap.exists ? snap.data() : { currentQuestion: 1, open: false };
-    const q = data.currentQuestion || 1;
-    const open = !!data.open;
-    localCurrentQuestion = q;
-    quizOpen = open;
-    const label = document.getElementById('currentQuestionLabel');
-    if (label) label.textContent = `Otázka: ${q}`;
-    const totalLabel = document.getElementById('totalQuestionsLabel');
-    if (totalLabel) totalLabel.textContent = TOTAL_QUESTIONS;
+    localCurrentQuestion = data.currentQuestion || 1;
+    quizOpen = !!data.open;
+
+    label.textContent = `Otázka: ${localCurrentQuestion}`;
+    label.style.color = quizOpen ? 'green' : 'red';
+    label.style.fontWeight = 'bold';
+    label.insertAdjacentText('beforeend', quizOpen ? ' — otevřeno' : ' — uzavřeno');
   });
 
-  // leaderboard realtime
   db.collection('players').onSnapshot((snap) => {
     const rows = [];
-    snap.forEach(d => {
-      const p = d.data();
-      rows.push(p);
-    });
+    snap.forEach(d => rows.push(d.data()));
     rows.sort((a,b) => (b.score || 0) - (a.score || 0));
     const tbody = document.querySelector('#leaderboardTable tbody');
-    const stateDoc = document.getElementById('currentQuestionLabel');
-    let curQ = 1;
-    // try to read current question from state
     db.collection('quiz').doc('state').get().then(s => {
-      if (s.exists && s.data().currentQuestion) curQ = s.data().currentQuestion;
+      const curQ = s.exists && s.data().currentQuestion ? s.data().currentQuestion : 1;
       if (tbody) {
         tbody.innerHTML = rows.map((p, idx) => {
-          const answered = p[`answered_q${curQ}`] ? 'Yes' : 'No';
+          const answered = p[`answered_q${curQ}`] ? '✅' : '❌';
           return `<tr>
             <td>${idx+1}</td>
             <td>${p.name || '—'}</td>
@@ -199,92 +173,59 @@ function attachPlayerListeners() {
   const quizBox = document.getElementById('quizBox');
   const loginBox = document.getElementById('loginBox');
 
-  if (localPlayerName) {
-    // hide login, show quiz
-    if (loginBox) loginBox.style.display = 'none';
-    if (quizBox) quizBox.style.display = 'block';
-  } else {
-    if (loginBox) loginBox.style.display = 'block';
-    if (quizBox) quizBox.style.display = 'none';
-  }
+  // Zobrazíme login jako výchozí
+  if (loginBox) loginBox.style.display = 'block';
+  if (quizBox) quizBox.style.display = 'none';
 
   if (joinBtn) {
     joinBtn.addEventListener('click', async () => {
-      const name = nameInput.value && nameInput.value.trim();
-      if (!name) return alert('Zadej prosím jméno.');
+      const name = nameInput.value.trim();
+      if (!name) return alert('Zadej jméno.');
       await playerJoin(name);
-      if (loginBox) loginBox.style.display = 'none';
-      if (quizBox) quizBox.style.display = 'block';
+      loginBox.style.display = 'none';
+      quizBox.style.display = 'block';
     });
   }
 
-  // submit
   const submitBtn = document.getElementById('submitBtn');
   if (submitBtn) submitBtn.addEventListener('click', async () => {
     const val = parseInt(document.getElementById('answerInput').value);
     await submitPlayerAnswer(val);
   });
 
-  // listen to quiz state to update question and open/close UI
   db.collection('quiz').doc('state').onSnapshot((snap) => {
     const data = snap.exists ? snap.data() : { currentQuestion: 1, open: false };
     localCurrentQuestion = data.currentQuestion || 1;
     quizOpen = !!data.open;
-    // update UI
-    const qNumEl = document.getElementById('questionNumber');
-    if (qNumEl) qNumEl.textContent = localCurrentQuestion;
-    const status = document.getElementById('status');
+
+    document.getElementById('questionNumber').textContent = localCurrentQuestion;
     const info = document.getElementById('info');
-    if (quizOpen) {
-      if (status) status.textContent = '';
-      if (info) info.textContent = 'Hlasování otevřeno — můžeš odpovědět.';
-    } else {
-      if (info) info.textContent = 'Hlasování zavřeno — čekej na admina.';
-    }
+    if (quizOpen) info.textContent = '🟢 Hlasování otevřeno!';
+    else info.textContent = '🔴 Hlasování zavřeno.';
   });
 }
 
-// leaderboard page
 function attachLeaderboardPage() {
   const leaderDiv = document.getElementById('leaderboardView');
   const qDisp = document.getElementById('questionDisplay');
 
-  // listen to state
   db.collection('quiz').doc('state').onSnapshot((snap) => {
-    const data = snap.exists ? snap.data() : { currentQuestion: 1, open: false };
+    const data = snap.exists ? snap.data() : { currentQuestion: 1 };
     const cur = data.currentQuestion || 1;
-    if (qDisp) qDisp.textContent = cur;
-    // update players
-    db.collection('players').get().then(snap2 => {
+    qDisp.textContent = cur;
+
+    db.collection('players').onSnapshot((snap2) => {
       const players = [];
       snap2.forEach(d => players.push(d.data()));
       players.sort((a,b) => (b.score || 0) - (a.score || 0));
       leaderDiv.innerHTML = players.map((p, idx) => {
-        const answered = p[`answered_q${cur}`] ? 'Yes' : 'No';
-        return `<div>${idx+1}. ${p.name || '-'} — ${p.score || 0} bodů — answered: ${answered}</div>`;
+        const answered = p[`answered_q${cur}`] ? '✅' : '❌';
+        return `<div>${idx+1}. ${p.name || '-'} — ${p.score || 0} bodů ${answered}</div>`;
       }).join('');
-    });
-  });
-
-  // also realtime updates for players
-  db.collection('players').onSnapshot(() => {
-    // trigger refresh via state snapshot callback above (keeps logic simple)
-    db.collection('quiz').doc('state').get().then(s => {
-      const cur = s.exists && s.data().currentQuestion ? s.data().currentQuestion : 1;
-      db.collection('players').get().then(snap2 => {
-        const players = [];
-        snap2.forEach(d => players.push(d.data()));
-        players.sort((a,b) => (b.score || 0) - (a.score || 0));
-        leaderDiv.innerHTML = players.map((p, idx) => {
-          const answered = p[`answered_q${cur}`] ? 'Yes' : 'No';
-          return `<div>${idx+1}. ${p.name || '-'} — ${p.score || 0} bodů — answered: ${answered}</div>`;
-        }).join('');
-      });
     });
   });
 }
 
-// reset page
 function attachResetPage() {
   const btn = document.getElementById('confirmReset');
   const res = document.getElementById('resetResult');
@@ -293,32 +234,17 @@ function attachResetPage() {
     btn.disabled = true;
     btn.textContent = 'Mažu...';
     await resetAll();
-    if (res) res.textContent = 'Kvíz byl resetován.';
+    res.textContent = '✅ Kvíz byl resetován.';
     btn.textContent = 'Smazat výsledky a nastavit otázku na 1';
     btn.disabled = false;
   });
 }
 
-// ========== BOOT ==========
+// ========== INIT ==========
 window.addEventListener('DOMContentLoaded', () => {
   const page = document.body.getAttribute('data-page');
-
-  if (page === 'admin') {
-    // show total count
-    const totalLabel = document.getElementById('totalQuestionsLabel');
-    if (totalLabel) totalLabel.textContent = TOTAL_QUESTIONS;
-    attachAdminListeners();
-  }
-
-  if (page === 'player') {
-    attachPlayerListeners();
-  }
-
-  if (page === 'leaderboard') {
-    attachLeaderboardPage();
-  }
-
-  if (page === 'reset') {
-    attachResetPage();
-  }
+  if (page === 'admin') attachAdminListeners();
+  if (page === 'player') attachPlayerListeners();
+  if (page === 'leaderboard') attachLeaderboardPage();
+  if (page === 'reset') attachResetPage();
 });

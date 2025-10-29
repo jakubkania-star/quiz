@@ -13,3 +13,8 @@ th, td { text-align:left; padding:8px; border-bottom:1px solid #eee; }
 #leaderboardView div { font-size:18px; padding:6px 0; border-bottom:1px dashed #eee; }
 input[type="text"], input[type="number"] { padding:8px; width:220px; border-radius:8px; border:1px solid #ddd; }
 .muted { color:#666; }
+.first-place {
+  background: linear-gradient(90deg, #fff8d6, #fff0a3);
+  font-weight: bold;
+  color: #6b4e00;
+}

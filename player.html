@@ -7,26 +7,140 @@
   <link rel="stylesheet" href="style.css">
   <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
   <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-firestore.js"></script>
-</head>
-<body data-page="player">
-  <div class="container">
-    <h1>📱 Rokový kvíz</h1>
+  <style>
+    body {
+      font-family: 'Segoe UI', Roboto, sans-serif;
+      background: #f8fafc;
+      margin: 0;
+      padding: 0;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      min-height: 100vh;
+    }
 
+    header {
+      display: flex;
+      align-items: center;
+      justify-content: flex-start;
+      width: 100%;
+      background: #004aad;
+      color: white;
+      padding: 10px 20px;
+      box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+    }
+
+    header img {
+      height: 40px;
+      margin-right: 15px;
+      border-radius: 5px;
+      background: white;
+      padding: 3px;
+    }
+
+    header h1 {
+      margin: 0;
+      font-size: 1.3rem;
+    }
+
+    .container {
+      background: white;
+      border-radius: 12px;
+      box-shadow: 0 4px 10px rgba(0,0,0,0.1);
+      margin-top: 30px;
+      padding: 25px 20px;
+      width: 90%;
+      max-width: 500px;
+      text-align: center;
+    }
+
+    h2 {
+      color: #004aad;
+      margin-top: 10px;
+    }
+
+    input[type="number"], input[type="text"] {
+      width: 80%;
+      padding: 10px;
+      margin: 10px 0;
+      border: 1px solid #ccc;
+      border-radius: 6px;
+      font-size: 1rem;
+    }
+
+    .btn {
+      background: #004aad;
+      color: white;
+      border: none;
+      padding: 10px 20px;
+      border-radius: 6px;
+      cursor: pointer;
+      font-size: 1rem;
+    }
+
+    .btn:hover {
+      background: #0058d1;
+    }
+
+    #status {
+      margin-top: 10px;
+      font-weight: 500;
+      color: green;
+    }
+
+    #info {
+      margin-top: 10px;
+      color: #666;
+    }
+
+    #currentPlayerName {
+      margin-top: 10px;
+      font-weight: bold;
+      color: #004aad;
+      font-size: 1.1rem;
+    }
+
+    @media (max-width: 600px) {
+      .container {
+        width: 95%;
+        margin-top: 20px;
+      }
+
+      header h1 {
+        font-size: 1.1rem;
+      }
+
+      input[type="number"], input[type="text"] {
+        width: 100%;
+      }
+    }
+  </style>
+</head>
+
+<body data-page="player">
+  <header>
+    <img src="https://1smiseny.skauting.cz/wp-content/uploads/2021/01/cropped-logo.png" alt="Skaut Logo">
+    <h1>Skautský kvíz — Hráč</h1>
+  </header>
+
+  <div class="container">
     <div id="loginBox">
-      <input id="playerNameInput" placeholder="Zadej své jméno" />
+      <h2>👋 Připoj se ke kvízu</h2>
+      <input id="playerNameInput" type="text" placeholder="Zadej své jméno" />
+      <br>
       <button id="joinBtn" class="btn">Připojit se</button>
     </div>
-<div id="currentPlayerName"></div>
-    
+
     <div id="quizBox" style="display:none;">
+      <div id="currentPlayerName"></div>
       <h2>Otázka <span id="questionNumber">1</span></h2>
       <p id="questionText">Zadej rok (1990–2025)</p>
       <input id="answerInput" type="number" min="1990" max="2025" placeholder="Rok (1990–2025)" />
       <div>
         <button id="submitBtn" class="btn">Odeslat odpověď</button>
       </div>
-      <p id="status" class="muted"></p>
-      <p id="info" class="muted">Čekej na otevření hlasování, pokud je zavřené.</p>
+      <p id="status"></p>
+      <p id="info">Čekej na otevření hlasování...</p>
     </div>
   </div>
 

@@ -8,7 +8,7 @@ const firebaseConfig = {
   appId: "1:1083388784503:web:b7d31f07741bcda1b73b72"
 };
 
-const TOTAL_QUESTIONS = 5;
+const TOTAL_QUESTIONS = 20;
 const MIN_YEAR = 1990;
 const MAX_YEAR = 2025;
 

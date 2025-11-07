@@ -13,7 +13,7 @@ const MIN_YEAR = 1990;
 const MAX_YEAR = 2025;
 
 // správné odpovědi
-const CORRECT = [2013, 2007, 2004, 2021, 2005];
+const CORRECT = [2005, 2017, 2003, 2014, 2020, 1990, 2011, 1997, 2007, 2023, 2012, 1998, 2006, 1992, 1999, 1997, 2003, 2011, 2008, 2010];
 
 // scoring function
 function scoreForDiff(diff) {
